@@ -5,6 +5,9 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.graphics.Color;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Build;
 
 public class NotificationHandler extends ContextWrapper {
@@ -37,10 +40,18 @@ public class NotificationHandler extends ContextWrapper {
              CHANNEL_HIGH_ID, CHANNEL_HIGH_NAME, NotificationManager.IMPORTANCE_HIGH);
 
             // ...Extra Config...
+            highChannel.enableLights(true);
+            highChannel.setLightColor(Color.YELLOW);
+            highChannel.setShowBadge(true);
+            highChannel.enableVibration(true);
+            //highChannel.setVibrationPattern(new long[100, 200, 300,]);
+            //Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+            //highChannel.setSound(defaultSoundUri, null);
+            highChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
 
             NotificationChannel lowChannel = new NotificationChannel(
                     CHANNEL_LOW_ID, CHANNEL_LOW_NAME, NotificationManager.IMPORTANCE_LOW);
-
+            lowChannel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
 
             getManager().createNotificationChannel(highChannel);
             getManager().createNotificationChannel(lowChannel);
@@ -55,14 +66,20 @@ public class NotificationHandler extends ContextWrapper {
                 return this.createNotificationWithChannel(title, message, CHANNEL_HIGH_ID);
             }
             return this.createNotificationWithChannel(title, message, CHANNEL_LOW_ID);
+        }else{
+            return createNotificationWithoutChannel(title, message);
         }
-        return createNotificationWithoutChannel(title, message);
     }
 
     private Notification.Builder createNotificationWithChannel(String title, String message, String channelId) {
 
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
+        if(Build.VERSION.SDK_INT >= 26) {
+            return new Notification.Builder(getApplicationContext(), channelId)
+                    .setContentTitle(title)
+                    .setContentText(message)
+                    .setColor(getColor(R.color.colorPrimary))
+                    .setSmallIcon(android.R.drawable.stat_notify_chat)
+                    .setAutoCancel(true);
         }
 
         return null;
@@ -75,8 +92,6 @@ public class NotificationHandler extends ContextWrapper {
                 .setContentText(message)
                 .setSmallIcon(android.R.drawable.stat_notify_chat)
                 .setAutoCancel(true);
-
-
 
     }
 
