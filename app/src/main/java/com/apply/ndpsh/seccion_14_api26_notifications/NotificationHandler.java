@@ -3,11 +3,12 @@ package com.apply.ndpsh.seccion_14_api26_notifications;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.content.Intent;
 import android.graphics.Color;
-import android.media.RingtoneManager;
-import android.net.Uri;
+import android.graphics.drawable.Icon;
 import android.os.Build;
 
 public class NotificationHandler extends ContextWrapper {
@@ -18,6 +19,9 @@ public class NotificationHandler extends ContextWrapper {
     private final String CHANNEL_HIGH_NAME = "HIGH CHANNEL";
     public static final String CHANNEL_LOW_ID = "2";
     private final String CHANNEL_LOW_NAME = "LOW CHANNEL";
+
+    private final int SUMMARY_GROUP_ID = 0;
+    private final String SUMMARY_GROUP_NAME = "Name grouping";
 
     public NotificationHandler(Context context) {
         super(context);
@@ -74,11 +78,24 @@ public class NotificationHandler extends ContextWrapper {
     private Notification.Builder createNotificationWithChannel(String title, String message, String channelId) {
 
         if(Build.VERSION.SDK_INT >= 26) {
+            Intent intent = new Intent(this, DetailsActivity.class);
+            intent.putExtra("title", title);
+            intent.putExtra("message", message);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            PendingIntent pIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+
+            Notification.Action action =
+                    new Notification.Action.Builder(
+                            Icon.createWithResource(this,android.R.drawable.ic_menu_send),
+                            "See Details", pIntent).build();
+
             return new Notification.Builder(getApplicationContext(), channelId)
                     .setContentTitle(title)
                     .setContentText(message)
+                    .addAction(action)
                     .setColor(getColor(R.color.colorPrimary))
                     .setSmallIcon(android.R.drawable.stat_notify_chat)
+                    .setGroup(SUMMARY_GROUP_NAME)
                     .setAutoCancel(true);
         }
 
@@ -87,12 +104,31 @@ public class NotificationHandler extends ContextWrapper {
 
     private Notification.Builder createNotificationWithoutChannel(String title, String message) {
 
+        Intent intent = new Intent(this, DetailsActivity.class);
+        intent.putExtra("title", title);
+        intent.putExtra("message", message);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        PendingIntent pIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+
         return new Notification.Builder(getApplicationContext())
                 .setContentTitle(title)
                 .setContentText(message)
+                .setContentIntent(pIntent)
                 .setSmallIcon(android.R.drawable.stat_notify_chat)
                 .setAutoCancel(true);
 
+    }
+
+    public void publishNoticationSummaryGroup(boolean isHighImportance) {
+        if (Build.VERSION.SDK_INT >= 26){
+            String channelID = (isHighImportance) ? CHANNEL_HIGH_ID : CHANNEL_LOW_ID;
+            Notification summaryNotification = new Notification.Builder(getApplicationContext(), channelID)
+                    .setSmallIcon(android.R.drawable.stat_notify_call_mute)
+                    .setGroup(SUMMARY_GROUP_NAME)
+                    .setGroupSummary(true)
+                    .build();
+            getManager().notify(SUMMARY_GROUP_ID, summaryNotification);
+        }
     }
 
 }
